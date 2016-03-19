@@ -12,17 +12,6 @@ function getPos() {
             getPosIP();
         });
     } else {
-        getPosIP();
+        console.log("Enable location on device");
     }
-}
-
-function getPosIP() {
-    $.ajax({
-        method: "GET",
-        url: "http://ip-api.com/json",
-        dataType: "json"
-    }).done(function(e){
-        lat = e.lat;
-        lon = e.lon;
-    });
 }
