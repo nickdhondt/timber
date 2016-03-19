@@ -8,17 +8,19 @@ $response = array();
 $response["success"] = false;
 
 if (!$link) {
-    $response["error"][] = [mysqli_connect_errno(), mysqli_connect_error()];
+    $response["error"][] = ["Error fetching trees", mysqli_connect_errno(), mysqli_connect_error()];
     exit;
 }
 
-if (!empty($_GET["age"]) && !empty($_GET["lat"]) && !empty($_GET["lon"])) {
+if (!empty($_GET["age"]) && !empty($_GET["distance"]) && !empty($_GET["lat"]) && !empty($_GET["lon"])) {
     $age = intval($_GET["age"]);
-    $lat = intval($_GET["lat"]);
-    $lon = intval($_GET["lon"]);
+    $distance = intval($_GET["distance"]);
+    $lat = floatval($_GET["lat"]);
+    $lon = floatval($_GET["lon"]);
 
-    if (is_int($age) && is_int(lat) && is_int()) {
+    if (is_int($age) && is_int($distance) && is_float($lat) && is_float($lon)) {
         $bomen = array();
+        $candidates = array();
 
         $beginage = 2016 - $age + 10;
         $endage = 2016 - $age - 10;
@@ -27,29 +29,43 @@ if (!empty($_GET["age"]) && !empty($_GET["lat"]) && !empty($_GET["lon"])) {
 
         if ($result = mysqli_query($link, $query)) {
             while ($row = mysqli_fetch_assoc($result)) {
-
-                $bomen[] = $row;
+                if (haversineGreatCircleDistance($lat, $lon, $row["Lat"], $row["Lon"]) <= $distance) $bomen[] = $row;
             }
 
             mysqli_free_result($result);
         }
 
-        if (count($bomen) > 0) {
-            $response["success"] = true;
+        $total_candidates = count($bomen);
+        $candidate_indexes = array();
 
-            $response["bomen"] = $bomen;
+        $max_count = 5;
 
-            foreach($bomen as $key => $boom) {
+        if ($total_candidates < $max_count) $max_count = $total_candidates;
 
-            }
-        } else {
-            $response["error"][] = "Error fetching trees";
+        while(count($candidate_indexes) < $max_count) {
+            do {
+                $rand = rand(0, $total_candidates - 1);
+            } while (in_array($rand, $candidate_indexes));
+
+            $candidate_indexes[] = $rand;
+
+            //print_r($rand);
         }
+
+        foreach($candidate_indexes as $index) {
+            $candidates[] = $bomen[$index];
+        }
+
+        //print_r($candidates);
+
+        $response["success"] = true;
+        $response["count"] = count($candidates);
+        $response["bomen"] = $candidates;
     } else {
-        $response["error"][] = "Parameters must be integers";
+        $response["error"][] = "Parameters must be integers or floats";
     }
 } else {
-    $response["error"][] = "GET parameters age, lat and lon expected";
+    $response["error"][] = "GET parameters age, distance(meter), lat and lon expected";
 }
 
 echo json_encode($response);
